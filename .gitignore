@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.part
+/data/*.csv
+/data/bts_refresh.json
+/dashboard_data.json
+/airport_performance.json
+/airline_airport_performance.json

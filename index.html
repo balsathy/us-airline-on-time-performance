@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Airline on-time performance</title>
+    <style>
+      :root {
+        font-family: Arial, Helvetica, sans-serif;
+        color: #172b4d;
+        background: #edf3fa;
+        --navy: #102b4e;
+        --blue: #1769aa;
+        --teal: #08a89d;
+        --muted: #526581;
+        --line: #dce6f0;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        padding: 48px 20px;
+        background:
+          radial-gradient(ellipse at 12% 0%, rgb(101 194 230 / 20%), transparent 34rem),
+          linear-gradient(145deg, #f3f8fd, #eaf1f8);
+        min-height: 100vh;
+      }
+
+      main { width: min(100%, 1080px); margin: 0 auto; }
+
+      main > p:first-child {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px;
+        padding: 7px 12px;
+        border: 1px solid #c8dff1;
+        border-radius: 999px;
+        background: #e3f2fb;
+        color: #176195;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      main > p:first-child::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--teal);
+        content: "";
+      }
+
+      h1 { margin: 0; color: var(--navy); font-size: clamp(1.8rem, 5vw, 2.5rem); }
+
+      .intro { color: var(--muted); line-height: 1.6; }
+
+      .sample-note {
+        margin: 24px 0;
+        padding: 14px 16px;
+        border: 1px solid #c6dff0;
+        border-left: 4px solid #2595c7;
+        border-radius: 8px;
+        background: linear-gradient(105deg, #e6f5fc, #f3f9ff);
+        color: #28536e;
+        line-height: 1.5;
+      }
+
+      .sample-note strong { color: #174e73; }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .filter-panel {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--line);
+        background: #f4f8fc;
+      }
+
+      .filter-panel > h2 {
+        margin: 0 0 14px;
+        color: #174c73;
+        font-size: 1rem;
+      }
+
+      .filter-group + .filter-group {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #dce6f0;
+      }
+
+      .filter-group h3 {
+        margin: 0 0 12px;
+        color: #315a78;
+        font-size: 0.88rem;
+      }
+
+      .filter-help {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .filter {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .filter input[type="search"],
+      .filter select {
+        width: 100%;
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid #c7d7e7;
+        border-radius: 6px;
+        background: linear-gradient(#fff, #f9fcff);
+        color: #172b4d;
+        font: inherit;
+        box-shadow: 0 1px 2px rgb(23 43 77 / 4%);
+      }
+
+      .filter input[type="search"]:focus,
+      .filter select:focus { border-color: #2689c2; }
+
+      .filter input[type="range"] { width: 100%; accent-color: var(--teal); }
+
+      .range-value { color: #11766f; font-weight: 700; }
+
+      .period {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(90deg, #edf7fc, #f5fbff);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .period-caption { font-weight: 700; }
+
+      .period-date {
+        padding: 5px 10px;
+        border: 1px solid #c7dfef;
+        border-radius: 6px;
+        background: #fff;
+        color: #155e87;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .period-through { color: #718096; }
+
+      .period-detail { color: #718096; font-size: 0.82rem; }
+
+      .missing-data-note {
+        flex-basis: 100%;
+        color: #8a4b08;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .refresh-time {
+        flex-basis: 100%;
+        margin-top: 2px;
+        color: #526581;
+        font-size: 0.82rem;
+      }
+
+      .refresh-time strong { color: #315a78; }
+
+      .panel {
+        overflow: hidden;
+        border: 1px solid #d4e0ec;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 16px 40px rgb(27 65 102 / 10%), 0 2px 6px rgb(27 65 102 / 5%);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px;
+        border-bottom: 1px solid #183d65;
+        background: linear-gradient(110deg, #102b4e, #174c73 70%, #17627c);
+        color: #eaf7ff;
+      }
+
+      h2 { margin: 0; color: #fff; font-size: 1.1rem; }
+
+      .section-heading {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--line);
+        background: #f4f8fc;
+      }
+
+      .section-heading h2 { color: #174c73; }
+
+      :focus-visible { outline: 3px solid #43c9c1; outline-offset: 2px; }
+
+      .table-wrap { overflow-x: auto; }
+
+      table { width: 100%; border-collapse: collapse; text-align: left; }
+
+      th, td { padding: 15px 24px; white-space: nowrap; }
+
+      th {
+        background: #eaf3fa;
+        color: #315a78;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .sort-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+      }
+
+      .sort-button:hover { color: #0a6b75; }
+
+      .sort-indicator {
+        color: #168a91;
+        font-size: 0.9rem;
+        letter-spacing: 0;
+      }
+
+      tbody tr { transition: background-color 140ms ease; }
+
+      tbody tr:nth-child(even) { background: #f7fafc; }
+
+      tbody tr:hover { background: #eaf7fa; }
+
+      tbody tr + tr { border-top: 1px solid #e7eef4; }
+
+      td:first-child { width: 72px; color: #217f98; font-weight: 700; }
+
+      .performance { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+
+      .rate { color: #126c67; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+      .bar { width: 100px; height: 8px; overflow: hidden; border-radius: 10px; background: #dce8f0; }
+
+      .bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #10a995, #318bc6); }
+
+      .count { font-variant-numeric: tabular-nums; }
+
+      .results-summary { padding: 14px 24px; color: #526581; font-size: 0.9rem; }
+
+      .data-status { padding: 12px 24px; border-bottom: 1px solid #e1e6ed; background: #f8fbfd; color: #526581; font-size: 0.9rem; }
+
+      .data-status a { margin-left: 8px; color: #1769aa; font-weight: 700; }
+
+      .data-status[data-state="error"] { background: #fff3f1; color: #9c2525; }
+
+      .empty-state { padding: 32px 24px; color: #526581; text-align: center; }
+
+      .definition { margin: 16px 24px 20px; color: #526581; font-size: 0.88rem; line-height: 1.5; }
+
+      @media (max-width: 560px) {
+        body { padding: 32px 14px; }
+        .panel-header { align-items: flex-start; flex-direction: column; padding: 18px; }
+        .filters { grid-template-columns: 1fr; padding: 18px; }
+        .period { align-items: flex-start; flex-direction: column; padding: 16px 18px; }
+        th, td { padding: 13px 18px; }
+        .definition { margin-right: 18px; margin-left: 18px; }
+      }
+
+      @media (min-width: 561px) and (max-width: 800px) {
+        .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Airline comparison</p>
+      <h1>On-time performance</h1>
+      <p class="intro">Compare airlines on each selected departure-arrival route using the same available BTS months.</p>
+
+      <aside class="sample-note">
+        <strong>Airline and airport results use matching BTS months.</strong><br>
+        Months outside the coverage shared by both data sets are excluded from all results.
+      </aside>
+
+      <section class="panel" aria-labelledby="ranking-title">
+        <div class="panel-header">
+          <h2 id="ranking-title">On-time performance results</h2>
+          <span>Airline route rankings</span>
+        </div>
+        <div class="period" aria-label="Results based on matching airline and airport data coverage">
+          <span class="period-caption">Results based on</span>
+          <strong class="period-date" id="period-start">Not available</strong>
+          <span class="period-through">through</span>
+          <strong class="period-date" id="period-end">Not available</strong>
+          <span class="period-detail" id="period-detail">(waiting for matching data)</span>
+          <span class="missing-data-note" id="missing-months" hidden></span>
+          <span class="refresh-time" id="last-refresh">Last BTS dataset download: checking…</span>
+        </div>
+        <section class="filter-panel" aria-labelledby="filters-heading">
+          <h2 id="filters-heading">Filters</h2>
+          <div class="filter-group">
+            <h3>Airlines</h3>
+            <div class="filters" aria-label="Airline filters">
+              <label class="filter" for="airline-search">
+                Find an airline
+                <input id="airline-search" type="search" placeholder="Search airline name" autocomplete="off">
+              </label>
+              <p class="filter-help">Only airline-route results with at least 100 completed flights are ranked.</p>
+              <label class="filter" for="result-limit">
+                Show airline-route results
+                <select id="result-limit">
+                  <option value="5">Top 5</option>
+                  <option value="10" selected>Top 10</option>
+                  <option value="100">Top 100</option>
+                  <option value="all">All matches</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="filter-group">
+            <h3>Airports</h3>
+            <p class="filter-help">Choose one airport pair or set one side to All airports. Departure and arrival cannot be the same airport.</p>
+            <div class="filters" aria-label="Airport filters">
+              <label class="filter" for="departure-airport-select">
+                Departure airport
+                <select id="departure-airport-select">
+                  <option value="all">All departure airports</option>
+                </select>
+              </label>
+              <label class="filter" for="arrival-airport-select">
+                Arrival airport
+                <select id="arrival-airport-select">
+                </select>
+              </label>
+            </div>
+          </div>
+        </section>
+        <div class="section-heading">
+          <h2>Performance</h2>
+        </div>
+        <p class="data-status" id="data-status" aria-live="polite">
+          Loading matching airline and airport summaries…
+        </p>
+        <p class="results-summary" id="results-summary" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" data-sort="rank" aria-sort="ascending"><button class="sort-button" type="button" data-sort="rank">Rank <span class="sort-indicator" aria-hidden="true">↑</span></button></th>
+                <th scope="col" data-sort="name" aria-sort="none"><button class="sort-button" type="button" data-sort="name">Airline <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th scope="col" data-sort="departure" aria-sort="none"><button class="sort-button" type="button" data-sort="departure">Departure airport <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th scope="col" data-sort="arrival" aria-sort="none"><button class="sort-button" type="button" data-sort="arrival">Arrival airport <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th scope="col" data-sort="flights" aria-sort="none"><button class="sort-button" type="button" data-sort="flights">Completed flights <span class="sort-indicator" aria-hidden="true"></span></button></th>
+                <th scope="col" data-sort="punctuality" aria-sort="none"><button class="sort-button" type="button" data-sort="punctuality">On-time performance <span class="sort-indicator" aria-hidden="true"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="result-rows"></tbody>
+          </table>
+          <p class="empty-state" id="empty-state" hidden>No results match these filters.</p>
+        </div>
+        <p class="definition">
+          On-time performance is on-time arrivals divided by completed flights. An arrival is on time when it is less than 15 minutes late; completed flights exclude cancellations and diversions.
+          Each row aggregates one airline's flights on one departure-arrival route. Airlines are ranked by on-time performance in one overall list for the current filters; when rates tie, more completed flights rank higher. Rank 1 appears only once.
+          Source: <a href="https://transtats.bts.gov/" target="_blank" rel="noreferrer">U.S. DOT Bureau of Transportation Statistics (BTS) TranStats</a>.
+        </p>
+      </section>
+    </main>
+    <script>
+      const dataStatus = document.querySelector("#data-status");
+      const airlineSearch = document.querySelector("#airline-search");
+      const sortableHeaders = document.querySelectorAll("th[data-sort]");
+      const resultLimit = document.querySelector("#result-limit");
+      const resultRows = document.querySelector("#result-rows");
+      const resultsSummary = document.querySelector("#results-summary");
+      const emptyState = document.querySelector("#empty-state");
+      const numberFormatter = new Intl.NumberFormat("en-US");
+      let sortKey = "rank";
+      let sortDirection = "ascending";
+      let airportRecords = [];
+      let airportAirlineRecords = null;
+      let dashboardCoverage = null;
+      const periodStartLabel = document.querySelector("#period-start");
+      const periodEndLabel = document.querySelector("#period-end");
+      const periodDetailLabel = document.querySelector("#period-detail");
+      const lastRefreshLabel = document.querySelector("#last-refresh");
+      const missingMonthsLabel = document.querySelector("#missing-months");
+      const departureAirportSelect = document.querySelector("#departure-airport-select");
+      const arrivalAirportSelect = document.querySelector("#arrival-airport-select");
+
+      function formatRefreshTime(timestamp) {
+        const refreshedAt = new Date(timestamp);
+        if (!timestamp || Number.isNaN(refreshedAt.getTime())) return null;
+        const formattedTime = new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "Etc/GMT+5"
+        }).format(refreshedAt);
+        return `${formattedTime} EST`;
+      }
+
+      function formatPeriodMonth(period) {
+        const [year, month] = period.split("-").map(Number);
+        return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" })
+          .format(new Date(year, month - 1, 1));
+      }
+
+      function showRefreshTime(timestamp, fallback) {
+        const formattedTime = formatRefreshTime(timestamp);
+        lastRefreshLabel.replaceChildren("Last BTS dataset download: ");
+        if (!formattedTime) {
+          lastRefreshLabel.append(fallback);
+          return;
+        }
+        const time = document.createElement("strong");
+        time.textContent = formattedTime;
+        lastRefreshLabel.append(time);
+      }
+
+      function displayDownloadMetadata(metadata = {}) {
+        const unavailableMonths = Array.isArray(metadata.unavailable_months)
+          ? metadata.unavailable_months
+          : [];
+        if (unavailableMonths.length > 0) {
+          const monthNames = unavailableMonths.map(formatPeriodMonth);
+          const unavailableText = monthNames.length > 1
+            ? monthNames.length === 2
+              ? `${monthNames[0]} and ${monthNames[1]}`
+              : `${monthNames.slice(0, -1).join(", ")}, and ${monthNames[monthNames.length - 1]}`
+            : monthNames[0];
+          missingMonthsLabel.textContent = `Not available in this BTS download: ${unavailableText}.`;
+          missingMonthsLabel.hidden = false;
+        } else {
+          missingMonthsLabel.textContent = "";
+          missingMonthsLabel.hidden = true;
+        }
+        showRefreshTime(metadata.last_download_at || metadata.last_successful_pull, "not recorded yet.");
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        })[character]);
+      }
+
+      async function loadDashboardData() {
+        const response = await fetch("dashboard_data.json");
+        if (!response.ok) throw new Error("dashboard_data.json not found. Run python build_airport_summary.py.");
+        const dashboardData = await response.json();
+        if (!dashboardData.coverage || !Array.isArray(dashboardData.airports) || !Array.isArray(dashboardData.airlines)) {
+          throw new Error("dashboard_data.json is missing the combined airline and airport summaries.");
+        }
+        dashboardCoverage = dashboardData.coverage;
+        airportRecords = dashboardData.airports.filter((record) =>
+          ["origin", "destination"].includes(record.role)
+          && record.airport
+          && Number.isFinite(Number(record.flights))
+          && Number.isFinite(Number(record.on_time))
+        );
+        airportAirlineRecords = dashboardData.airlines.filter((record) =>
+          ["departure", "arrival", "route"].includes(record.scope)
+          && record.carrier
+          && record.airline
+          && Number.isFinite(Number(record.flights))
+          && Number.isFinite(Number(record.on_time))
+        );
+        if (airportRecords.length === 0) throw new Error("No airport choices are available in dashboard_data.json.");
+        if (airportAirlineRecords.length === 0) throw new Error("No airline route records are available in dashboard_data.json.");
+
+        const coverage = dashboardData.coverage;
+        periodStartLabel.textContent = formatPeriodMonth(coverage.period_start);
+        periodEndLabel.textContent = formatPeriodMonth(coverage.period_end);
+        periodDetailLabel.textContent = `(${coverage.months_included} matching monthly files)`;
+        displayDownloadMetadata(dashboardData.download);
+        dataStatus.dataset.state = "loaded";
+        dataStatus.textContent = `Loaded ${numberFormatter.format(airportRecords.length)} airport choices and ${numberFormatter.format(airportAirlineRecords.length)} airline route records.`;
+        populateAirportOptions();
+        renderResults();
+      }
+
+      function populateAirportOptions() {
+        let departure = departureAirportSelect.value || "all";
+        let arrival = arrivalAirportSelect.value || "";
+        const getOptions = (role, otherAirport) => {
+          const airportField = role === "origin" ? "departure" : "arrival";
+          const otherField = role === "origin" ? "arrival" : "departure";
+          const matchingAirports = new Set(
+            airportAirlineRecords
+              .filter((record) => record.scope === "route")
+              .filter((record) => otherAirport === "all" || !otherAirport || record[otherField] === otherAirport)
+              .filter((record) => otherAirport === "all" || !otherAirport || record[airportField] !== otherAirport)
+              .map((record) => record[airportField])
+          );
+          return airportRecords
+            .filter((record) => record.role === role && matchingAirports.has(record.airport))
+            .sort((first, second) => first.airport.localeCompare(second.airport));
+        };
+        const labelAirport = (record) => {
+          const city = String(record.city || "").split(",")[0].trim();
+          return city ? `${record.airport} - ${city}` : record.airport;
+        };
+        const setOptions = (select, records, allLabel, selectedValue, allowAll) => {
+          select.replaceChildren();
+          const allOption = new Option(allLabel, "all");
+          allOption.disabled = !allowAll;
+          select.add(allOption);
+          records.forEach((record) => select.add(new Option(labelAirport(record), record.airport)));
+          if (records.length === 0) {
+            select.add(new Option("No routes available", ""));
+          }
+          if (selectedValue === "all" && allowAll) {
+            select.value = "all";
+          } else if (records.some((record) => record.airport === selectedValue)) {
+            select.value = selectedValue;
+          } else {
+            select.value = records[0]?.airport || "";
+          }
+        };
+
+        const departureOptions = getOptions("origin", arrival);
+        if (departure !== "all" && !departureOptions.some((record) => record.airport === departure)) {
+          departure = "all";
+        }
+        setOptions(
+          departureAirportSelect,
+          departureOptions,
+          "All departure airports",
+          departure,
+          arrival !== "all"
+        );
+        departure = departureAirportSelect.value;
+
+        const arrivalOptions = getOptions("destination", departure);
+        if (arrival === "all" && departure === "all") {
+          arrival = arrivalOptions[0]?.airport || "";
+        }
+        setOptions(
+          arrivalAirportSelect,
+          arrivalOptions,
+          "All arrival airports",
+          arrival,
+          departure !== "all"
+        );
+        updateAirportSelectConstraints();
+      }
+
+      function updateAirportSelectConstraints() {
+        const departure = departureAirportSelect.value;
+        const arrival = arrivalAirportSelect.value;
+        Array.from(departureAirportSelect.options).forEach((option) => {
+          if (option.value !== "all") option.disabled = option.value === arrival;
+        });
+        Array.from(arrivalAirportSelect.options).forEach((option) => {
+          if (option.value !== "all") option.disabled = option.value === departure;
+        });
+      }
+
+      function renderResults() {
+        if (airportAirlineRecords === null) {
+          periodStartLabel.textContent = "Not available";
+          periodEndLabel.textContent = "Not available";
+          periodDetailLabel.textContent = "(matching summaries unavailable)";
+          resultRows.replaceChildren();
+          dataStatus.dataset.state = "error";
+          dataStatus.textContent = "Matching airline and airport results are unavailable. Run python build_airport_summary.py.";
+          resultsSummary.textContent = "Results are unavailable until both matching BTS summaries are ready.";
+          emptyState.hidden = true;
+          return;
+        }
+        const departure = departureAirportSelect.value;
+        const arrival = arrivalAirportSelect.value;
+        const coverage = dashboardCoverage;
+        if (coverage?.period_start && coverage?.period_end) {
+          periodStartLabel.textContent = formatPeriodMonth(coverage.period_start);
+          periodEndLabel.textContent = formatPeriodMonth(coverage.period_end);
+          periodDetailLabel.textContent = `(${coverage.months_included} matching monthly files)`;
+        }
+        const airlineData = airportAirlineRecords
+          .filter((record) => record.scope === "route")
+          .filter((record) => departure === "all" || record.departure === departure)
+          .filter((record) => arrival === "all" || record.arrival === arrival)
+          .map((record) => ({
+            name: record.airline,
+            departure: record.departure,
+            arrival: record.arrival,
+            punctuality: Number(record.on_time),
+            flights: Number(record.flights)
+          }));
+        const searchTerm = airlineSearch.value.trim().toLowerCase();
+        const minimumAirlineCount = 100;
+        const searchedAirlines = airlineData
+          .filter((airline) => airline.name.toLowerCase().includes(searchTerm));
+        const excludedSmallSamples = searchedAirlines.filter(
+          (airline) => airline.flights < minimumAirlineCount
+        ).length;
+        const matchingAirlines = searchedAirlines
+          .filter((airline) => airline.flights >= minimumAirlineCount)
+          .sort((first, second) =>
+            second.punctuality - first.punctuality
+            || second.flights - first.flights
+            || first.name.localeCompare(second.name)
+            || first.departure.localeCompare(second.departure)
+            || first.arrival.localeCompare(second.arrival)
+          );
+        matchingAirlines.forEach((airline, index) => {
+          airline.rank = index + 1;
+        });
+        const visibleAirlines = resultLimit.value === "all"
+          ? matchingAirlines
+          : matchingAirlines.slice(0, Number(resultLimit.value));
+        const rows = visibleAirlines;
+        const direction = sortDirection === "ascending" ? 1 : -1;
+        const sortedRows = rows.sort((first, second) => {
+          if (sortKey === "departure") {
+            return first.departure.localeCompare(second.departure) * direction
+              || first.arrival.localeCompare(second.arrival)
+              || first.rank - second.rank;
+          }
+          if (sortKey === "arrival") {
+            return first.arrival.localeCompare(second.arrival) * direction
+              || first.departure.localeCompare(second.departure)
+              || first.rank - second.rank;
+          }
+          if (sortKey === "rank" || sortKey === "flights" || sortKey === "punctuality") {
+            return (Number(first[sortKey]) - Number(second[sortKey])) * direction
+              || first.departure.localeCompare(second.departure)
+              || first.arrival.localeCompare(second.arrival)
+              || first.name.localeCompare(second.name);
+          }
+          return String(first[sortKey] || "").localeCompare(String(second[sortKey] || "")) * direction
+            || first.departure.localeCompare(second.departure)
+            || first.arrival.localeCompare(second.arrival)
+            || first.name.localeCompare(second.name);
+        });
+        sortableHeaders.forEach((header) => {
+          const isActive = header.dataset.sort === sortKey;
+          header.setAttribute("aria-sort", isActive ? sortDirection : "none");
+          header.querySelector(".sort-indicator").textContent =
+            isActive ? (sortDirection === "ascending" ? "↑" : "↓") : "";
+        });
+        const exclusionNote = excludedSmallSamples > 0
+          ? ` ${numberFormatter.format(excludedSmallSamples)} results below 100 flights are excluded.`
+          : "";
+        resultsSummary.textContent = `Showing ${numberFormatter.format(visibleAirlines.length)} airline-route results. Only routes with at least 100 completed flights are ranked.${exclusionNote} One overall ranking for the current filters; Rank 1 appears only once.`;
+        emptyState.hidden = sortedRows.length > 0;
+        resultRows.innerHTML = sortedRows.map((record) => `
+          <tr>
+            <td>${record.rank}</td>
+            <td><strong>${escapeHtml(record.name)}</strong></td>
+            <td>${escapeHtml(record.departure)}</td>
+            <td>${escapeHtml(record.arrival)}</td>
+            <td class="count">${numberFormatter.format(record.flights)}</td>
+            <td>
+              <div class="performance">
+                <span class="rate">${record.punctuality.toFixed(2)}%</span>
+                <span class="bar" aria-hidden="true">
+                  <span class="bar-fill" style="display: block; width: ${record.punctuality}%"></span>
+                </span>
+              </div>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      airlineSearch.addEventListener("input", renderResults);
+      sortableHeaders.forEach((button) => {
+        button.addEventListener("click", () => {
+          const selectedKey = button.dataset.sort;
+          if (selectedKey === sortKey) {
+            sortDirection = sortDirection === "ascending" ? "descending" : "ascending";
+          } else {
+            sortKey = selectedKey;
+            sortDirection = sortKey === "name" || sortKey === "departure" || sortKey === "arrival"
+              || sortKey === "rank"
+              ? "ascending"
+              : "descending";
+          }
+          renderResults();
+        });
+      });
+      resultLimit.addEventListener("change", renderResults);
+      const onDepartureSelectionChange = () => {
+        if (departureAirportSelect.value !== "all"
+          && departureAirportSelect.value === arrivalAirportSelect.value) {
+          arrivalAirportSelect.value = "all";
+        }
+        populateAirportOptions();
+        renderResults();
+      };
+      const onArrivalSelectionChange = () => {
+        if (arrivalAirportSelect.value !== "all"
+          && arrivalAirportSelect.value === departureAirportSelect.value) {
+          departureAirportSelect.value = "all";
+        }
+        populateAirportOptions();
+        renderResults();
+      };
+      departureAirportSelect.addEventListener("change", onDepartureSelectionChange);
+      arrivalAirportSelect.addEventListener("change", onArrivalSelectionChange);
+      loadDashboardData()
+        .catch((error) => {
+          airportRecords = [];
+          airportAirlineRecords = null;
+          departureAirportSelect.replaceChildren(new Option("Airport results unavailable", ""));
+          arrivalAirportSelect.replaceChildren(new Option("Airport results unavailable", ""));
+          dataStatus.dataset.state = "error";
+          dataStatus.textContent = error.message;
+          renderResults();
+        });
+    </script>
+  </body>
+</html>
